@@ -21,7 +21,7 @@ class Display {
   }
 }
 
-readFile("day-08/part-01.input", "utf8", (err, data) => {
+readFile("2021/day-08/part-01.input", "utf8", (err, data) => {
   let inputs = data.split(/\n/);
   inputs = inputs.map((e) => e.split(" | "));
   let displays = inputs.map((e) => new Display(e[0], e[1]));

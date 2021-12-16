@@ -1,4 +1,5 @@
 import { readFile } from "fs";
+import { decode } from "punycode";
 
 class Display {
   // 1, 7, 4, 8 are axioms
@@ -15,20 +16,108 @@ class Display {
   // 0: only 6 segment remaining
 
   constructor(input, output) {
-    this.input = input.split(" ").map((i) => i.sort());
-    this.output = output.split(" ").map((i) => i.sort());
+    this.input = input.split(" ").map((i) => i.split("").sort().join(""));
+    this.output = output.split(" ").map((i) => i.split("").sort().join(""));
+    this.decodeMap = {};
+    this.fiveDigits = [];
+    this.sixDigits = [];
 
-    input.forEach((i) => {
+    this.input.forEach((i) => {
       if (i.length == 2) {
-        this.two = i;
+        this.one = i;
+        this.decodeMap[i] = 1;
       } else if (i.length == 3) {
         this.seven = i;
+        this.decodeMap[i] = 7;
       } else if (i.length == 4) {
         this.four = i;
+        this.decodeMap[i] = 4;
       } else if (i.length == 7) {
         this.eight = i;
+        this.decodeMap[i] = 8;
+      } else if (i.length == 5) {
+        this.fiveDigits.push(i);
+      } else if (i.length == 6) {
+        this.sixDigits.push(i);
       }
     });
+
+    this.findNine();
+    this.findThree();
+    this.findTwo();
+    this.findFive();
+    this.findSix();
+    this.findZero();
+
+    //
+  }
+
+  findZero() {
+    this.zero = this.sixDigits.filter(
+      (f) => f != this.nine && f != this.six
+    )[0];
+    this.decodeMap[this.zero] = 0;
+  }
+
+  // 6: only 6 segment that shares 2 segments with "7"
+  findSix() {
+    this.six = this.sixDigits.filter(
+      (f) => this.sharedChars(f, this.seven) == 2
+    )[0];
+    this.decodeMap[this.six] = 6;
+  }
+
+  // 5: only 5 segment that isn't "2" or "3"
+  findFive() {
+    this.five = this.fiveDigits.filter(
+      (f) => f != this.two && f != this.three
+    )[0];
+    this.decodeMap[this.five] = 5;
+  }
+
+  // 2: only 5 segment that shares 2 segments with "4"
+  findTwo() {
+    this.fiveDigits.forEach((f) => {
+      if (this.sharedChars(f, this.four) == 2) {
+        this.two = f;
+        this.decodeMap[f] = 2;
+      }
+    });
+  }
+
+  // 3: only 5 segment that shares 3 segments with "7"
+  findThree() {
+    this.fiveDigits.forEach((f) => {
+      if (this.sharedChars(f, this.seven) == 3) {
+        this.three = f;
+        this.decodeMap[f] = 3;
+      }
+    });
+  }
+
+  // 9: only 6 segment that shares 4 segments with "4"
+  findNine() {
+    this.sixDigits.forEach((f) => {
+      if (this.sharedChars(f, this.four) == 4) {
+        this.nine = f;
+        this.decodeMap[f] = 9;
+      }
+    });
+  }
+
+  outputTranslation() {
+    return this.output.map((o) => this.decodeMap[o]).join("");
+  }
+
+  sharedChars(a, b) {
+    let res = 0;
+    if (b == undefined) {
+      return;
+    }
+    for (let i in a) {
+      b.includes(a[i]) ? res++ : false;
+    }
+    return res;
   }
 
   print() {
@@ -47,13 +136,12 @@ class Display {
   }
 }
 
-readFile("day-08/test.input", "utf8", (err, data) => {
+readFile("2021/day-08/part-01.input", "utf8", (err, data) => {
   let inputs = data.split(/\n/);
   inputs = inputs.map((e) => e.split(" | "));
   let displays = inputs.map((e) => new Display(e[0], e[1]));
-  displays.map((e) => e.print());
-  let numUnique = displays
-    .map((d) => d.numUniqueOutputs())
-    .reduce((p, v) => p + v);
-  console.log(numUnique);
+  console.log(displays.map((e) => parseInt(e.outputTranslation())));
+  console.log(
+    displays.map((e) => parseInt(e.outputTranslation())).reduce((a, b) => a + b)
+  );
 });
